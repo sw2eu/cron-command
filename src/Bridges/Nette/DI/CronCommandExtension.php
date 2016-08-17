@@ -6,6 +6,7 @@ use Kdyby\Console\DI\ConsoleExtension;
 use Nette;
 use Nette\DI\Compiler;
 use Nette\DI\CompilerExtension;
+use Nette\DI\Helpers;
 use Nette\DI\Statement;
 use Nette\Utils\Validators;
 use Sw2\CronCommand\Runner;
@@ -36,15 +37,11 @@ class CronCommandExtension extends CompilerExtension
 		Validators::assertField($config, 'locksDir', 'string');
 		Validators::assertField($config, 'storage', 'string|Nette\DI\Statement|null');
 		Validators::assertField($config, 'runner', 'string|Nette\DI\Statement|null');
-
-		@mkdir($config['locksDir'], 0777, TRUE);
-		if (!is_writable($config['locksDir'])) {
-			throw new Nette\IOException("Directory '{$config['locksDir']}' is not writable.");
-		}
 	}
 
 	public function beforeCompile()
 	{
+		$this->prepareLocksDir();
 		$this->setupStorage($this->config['storage']);
 		$this->setupRunner($this->config['runner'], $this->prepareTasks());
 	}
@@ -54,13 +51,24 @@ class CronCommandExtension extends CompilerExtension
 	 */
 	private function setupStorage($config)
 	{
-		if ($config === NULL) {
-			$config = new Statement(FileStorage::class, ['%tempDir%/cron-storage']);
-		}
 		$builder = $this->getContainerBuilder();
+		if ($config === NULL) {
+			$tempDir = $builder->parameters['tempDir'];
+			$config = new Statement(FileStorage::class, ["$tempDir/cron-storage"]);
+		}
 		$definition = $builder->addDefinition($this->prefix('storage'));
 		Compiler::loadDefinition($definition, $config);
 		$definition->setAutowired(FALSE);
+	}
+
+	private function prepareLocksDir()
+	{
+		$parameters = $this->getContainerBuilder()->parameters;
+		$this->config['locksDir'] = $locksDir = Helpers::expand($this->config['locksDir'], $parameters);
+		@mkdir($locksDir, 0777, TRUE);
+		if (!is_writable($locksDir)) {
+			throw new Nette\IOException("Directory '$locksDir' is not writable.");
+		}
 	}
 
 	/** @return array */
@@ -90,10 +98,10 @@ class CronCommandExtension extends CompilerExtension
 	 */
 	private function setupRunner($config, array $tasks)
 	{
-		if ($config === NULL) {
-			$config = new Statement(Runner::class, ['cron:runner', '@' . $this->prefix('storage')]);
-		}
 		$builder = $this->getContainerBuilder();
+		if ($config === NULL) {
+			$config = new Statement(Runner::class, ['cron:runner', $this->prefix('@storage')]);
+		}
 		$definition = $builder->addDefinition($this->prefix('runner'));
 		Compiler::loadDefinition($definition, $config);
 		$definition->setAutowired(FALSE);
@@ -104,7 +112,7 @@ class CronCommandExtension extends CompilerExtension
 			$builder->getDefinition($task)
 				->addTag(ConsoleExtension::TAG_COMMAND)
 				->addSetup('setLocksDir', [$this->config['locksDir']])
-				->addSetup('setStorage', ['@' . $this->prefix('storage')]);
+				->addSetup('setStorage', [$this->prefix('@storage')]);
 		}
 	}
 
