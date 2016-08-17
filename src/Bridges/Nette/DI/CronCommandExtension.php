@@ -75,6 +75,7 @@ class CronCommandExtension extends CompilerExtension
 			$definition = $builder->addDefinition($name);
 			Compiler::loadDefinition($definition, $task);
 			$definition->setAutowired(FALSE);
+			$definition->setInject(TRUE);
 		}
 		foreach ($builder->findByTag($this->config['tasksTag']) as $name => $allowed) {
 			if (!$allowed) continue;
