@@ -1,0 +1,21 @@
+{
+	"name": "sw2eu/cron-command",
+	"license": "BSD",
+	"authors": [
+		{
+			"name": "Lukas Povoda",
+			"email": "lupo112@gmail.com"
+		}
+	],
+	"require": {
+		"nette/di": "~2.4",
+		"nette/reflection": "~2.4",
+		"nette/safe-stream": "~2.3",
+		"nette/utils": "~2.4",
+		"kdyby/console": "~2.6",
+		"mtdowling/cron-expression": "~1.1"
+	},
+	"autoload": {
+		"classmap": ["src/"]
+	}
+}

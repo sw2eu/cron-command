@@ -1,0 +1,3 @@
+This will be documented soon...
+
+See also [other libraries](https://github.com/sw2eu).
