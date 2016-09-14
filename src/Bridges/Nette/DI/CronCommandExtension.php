@@ -111,6 +111,7 @@ class CronCommandExtension extends CompilerExtension
 			$definition->addSetup('addTask', ["@$task"]);
 			$builder->getDefinition($task)
 				->addTag(ConsoleExtension::TAG_COMMAND)
+				->addSetup('setDebugMode', [$builder->parameters['debugMode']])
 				->addSetup('setLocksDir', [$this->config['locksDir']])
 				->addSetup('setStorage', [$this->prefix('@storage')]);
 		}
